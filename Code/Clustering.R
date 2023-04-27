@@ -449,6 +449,11 @@ remove(clustering2y, eikm_y, indy, out.pcay,variables.pcay,i,year)
 
 # We should add one by one each province to the control group in order to check for robustness 
 
+treat_check$treatment_group <- rep(1, length(treat_check$province))
+treat_check$treatment_group[treat_check$province_c != 6 & treat_check$PCA_2dim == 0]= 0
+
+write_feather(treat_check, "C:/Users/ignac/OneDrive/Documentos/PHD/PCA_Kmeans_Educ/Data/Cleaned Data/treat_check.feather" )
+
 ################################# Descriptive statistics ##############################################
 
 # Load required packages
