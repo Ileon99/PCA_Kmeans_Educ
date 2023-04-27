@@ -84,6 +84,8 @@ grid.arrange(p2, p3, p4, p4, nrow = 2)
 
 #Cluster 3 would be the control group and the others the treatment group
 
+k4$cluster
+
 treat_check$kmeans <- k4$cluster
 treat_check$kmeans <- ifelse(treat_check$kmeans== 1, 0,1)
 
@@ -167,7 +169,6 @@ clustering2 <- kmeans(variables.pca, 4)
 
 fviz_cluster(clustering2, geom="text", variables.pca)
 
-dev.off()
 
 treat_check$PCA_2dim <- clustering2$cluster
 treat_check$PCA_2dim <- ifelse(treat_check$PCA_2dim== 1, 0,1)
@@ -227,7 +228,7 @@ clustering3$cluster
 fviz_cluster(clustering3, geom="text", variables.pca3)
 
 treat_check$PCA_3dim <- clustering3$cluster
-treat_check$PCA_3dim <- ifelse(treat_check$PCA_3dim == 4, 0, 1)
+treat_check$PCA_3dim <- ifelse(treat_check$PCA_3dim == 3, 0, 1)
 
 remove(clus)
 remove(clustering3)
@@ -297,209 +298,156 @@ remove(ind4)
 
 educ_indices <- read_feather("C:/Users/ignac/OneDrive/Documentos/PHD/PCA_Kmeans_Educ/Data/Cleaned Data/educ_indices.feather")
 
-#Let's check the robustness of our clustering by including data from 2011 to
+treat_check$"2010" <- rep(0, length(treat_check$province))
+treat_check$"2011" <- rep(0, length(treat_check$province))
+treat_check$"2012" <- rep(0, length(treat_check$province))
+treat_check$"2013" <- rep(0, length(treat_check$province))
+treat_check$"2014" <- rep(0, length(treat_check$province))
+treat_check$"2015" <- rep(0, length(treat_check$province))
+treat_check$"2016" <- rep(0, length(treat_check$province))
+treat_check$"2017" <- rep(0, length(treat_check$province))
+treat_check$"2018" <- rep(0, length(treat_check$province))
 
+i=7
 
-grupos <- treat_check[,"province"]
-
-grupos$'2010' <- treat_check$PCA_2dim
-
-
-
-#Now we will create a function to realize the same clustering for each year
-
-auto_cluster_pca <- function(educ_indices){
+for (year in 2010:2018) {
   
-  #Data Preparation
+  #Data preparation
   
-  #We keep only the variables that we will use 
+  #Taking only the data from each year for the provinces we study and the variables we study
   
-  eikm_v <- educ_indices[educ_indices$province_c != 90 & educ_indices$province_c != 20 ,
-                                c("beer", "hser","hscr","beer_rur","beer_urb","hser_urb","hser_rur","educ_years","ar", "pop_per_IE","spt")]
+  eikm_y <- educ_indices[educ_indices$province_c != 90 & educ_indices$province_c != 20 & educ_indices$year == year ,
+                         c("beer", "hser","hscr","beer_rur","beer_urb","hser_urb","hser_rur","educ_years","ar", "pop_per_IE","spt")]
   
-  eikm_v <- eikm_v %>%  na.omit()
+  #Avoiding NAs in our sample
+  
+  eikm_y <- eikm_y %>%  na.omit()
   
   #Now we standardize our data to have a mean equal to 0 and a standard deviation equal to one: 
   
-  eikm_v <- as.data.frame(scale(eikm_v))
+  eikm_y <- as.data.frame(scale(eikm_y))
   
   #PCA
   
-  out.pcav<-PCA(eikm_2010,scale.unit=TRUE, ncp = 2,graph=FALSE)
+  out.pcay<-PCA(eikm_y,scale.unit=TRUE, ncp = 2,graph=FALSE)
   
   #Let's take the coordinates of the two dimensions for each province : 
   
-  indv <- get_pca_ind(out.pcav)
+  indy <- get_pca_ind(out.pcay)
   
-  variables.pcav <- indv$coord
+  variables.pcay <- indy$coord
   
   #k means with k = 4
   
-  clustering2v <- kmeans(variables.pcav, 4)
+  clustering2y <- kmeans(variables.pcay, 4)
   
-  return(clustering2v$cluster)
+  # keeping the clustering in th dataset treat_check
+  
+  treat_check[,i] <- clustering2y$cluster
+  
+  i = i + 1
   
 }
 
-grupos$'2011' <- auto_cluster_pca(educ_indices2011)
-grupos$'2012' <- auto_cluster_pca(educ_indices2012)
-grupos$'2013' <- auto_cluster_pca(educ_indices2013)
-grupos$'2014' <- auto_cluster_pca(educ_indices2014)
-grupos$'2015' <- auto_cluster_pca(educ_indices2015)
-grupos$'2016' <- auto_cluster_pca(educ_indices2016)
-grupos$'2017' <- auto_cluster_pca(educ_indices2017)
-grupos$'2018' <- auto_cluster_pca(educ_indices2018)
+
+treat_check$"2010" <- ifelse(treat_check$"2010"== 4, 0, 1)
+treat_check$"2011" <- ifelse(treat_check$"2011"== 2, 0, 1)
+treat_check$"2012" <- ifelse(treat_check$"2012"== 2, 0, 1)
+treat_check$"2013" <- ifelse(treat_check$"2013"== 4, 0, 1)
+treat_check$"2014" <- ifelse(treat_check$"2014"== 3, 0, 1)
+treat_check$"2015" <- ifelse(treat_check$"2015"== 4, 0, 1)
+treat_check$"2016" <- ifelse(treat_check$"2016"== 2, 0, 1)
+treat_check$"2017" <- ifelse(treat_check$"2017"== 4, 0, 1)
+treat_check$"2018" <- ifelse(treat_check$"2018"== 3, 0, 1)
 
 
-xtable(grupos[1:12,c("province", "2010","2011","2012","2013","2014","2015")])
+# As we find the same control group when we do not consider Chimborazo we have all the time the same clustering 
+#Except for 2012-2013 when Pichincha is the only province that remains in the control group
+# In the same years, Santa Elena is the only time that it is in the control group
 
-xtable(grupos[13:23,c("province", "2010","2011","2012","2013","2014","2015")])
+remove(clustering2y,eikm_y)
+remove(indy,out.pcay,treatment_group,variables.pcay,i,year)
 
-xtable(grupos[1:12,c("province", "2016","2017","2018")])
+####################### Robustness for 2012 and 2013 ###############
 
-xtable(grupos[13:23,c("province", "2016","2017","2018")])
-
-#When we realize the same K-means/PCA for next years we see the only clustering that remains equal is the 4
-#Perhaps this could help us to choose the fourth cluster as the control group
-
-
-####################################################################
+#We will do the same clustering for 2012 and 2013
 
 
-#Now we will realize a clustering with the whole database 
+treat_check$"2012bis" <- rep(0, length(treat_check$province)) 
+treat_check$"2013bis" <- rep(0, length(treat_check$province))
 
-#We put all educ_indices databases in a single data base
+i= 16
 
-educ_indices_tot <- rbind(educ_indices2010, educ_indices2011, educ_indices2012,educ_indices2013, educ_indices2014,
-                          educ_indices2015, educ_indices2016, educ_indices2017, educ_indices2018)
-
-educ_indices_tot <- educ_indices_tot[educ_indices_tot$province != "GALAPAGOS" & 	
-    educ_indices_tot$province != "ZONAS NO DELIMITADAS",]
-
-
-#Now we get only the matrix with the concerned variables : 
-
-eikm <- educ_indices_tot[,c("beer", "hser","hscr","beer_rur","beer_urb","hser_urb","hser_rur","educ_years","ar", "pop_per_IE","spt")]
-
-eikm <- eikm %>%  na.omit()
-
-#Now we standardize our data to have a mean equal to 0 and a standard deviation equal to one: 
-
-eikm <- as.data.frame(scale(eikm))
-
-
-#####################################################################
-
-out.pca3<-PCA(eikm,scale.unit=TRUE, ncp = 2,graph=FALSE)
-
-print(out.pca3$eig)
-
-#Let's analyze the correlation cercle
-
-fviz_pca_var (out.pca3, col.var = "red")
-
-#We see which variables contribute to each dimension 
-
-var3 <- get_pca_var(out.pca3)
-
-var3$contrib
-
-#Let's take the coordinates of the two dimensions for each province : 
-
-ind3 <- get_pca_ind(out.pca3)
-
-variables.pca3 <- ind3$coord
-
-#Let's realize with these variables the k-means
-
-#Elbows technique 
-
-elb_wss3 <- rep(0,times=10)
-for (k in 1:10){
-  clus <- kmeans(variables.pca3,centers=k)
-  elb_wss2[k] <- clus$tot.withinss
+for (year in 2012:2013) {
+  
+  #Data preparation
+  
+  #Taking only the data from each year for the provinces we study and the variables we study
+  
+  eikm_y <- educ_indices[educ_indices$province_c != 90 & educ_indices$province_c != 20 & educ_indices$year == year,
+                         c("beer", "hser","hscr","beer_rur","beer_urb","hser_urb","hser_rur","educ_years","ar", "pop_per_IE","spt")]
+  
+  #Avoiding NAs in our sample
+  
+  eikm_y <- eikm_y %>%  na.omit()
+  
+  #Now we standardize our data to have a mean equal to 0 and a standard deviation equal to one: 
+  
+  eikm_y <- as.data.frame(scale(eikm_y))
+  
+  #PCA
+  
+  out.pcay<-PCA(eikm_y,scale.unit=TRUE, ncp = 2,graph=FALSE)
+  
+  #Let's take the coordinates of the two dimensions for each province : 
+  
+  indy <- get_pca_ind(out.pcay)
+  
+  variables.pcay <- indy$coord
+  
+  #k means with k = 4
+  
+  clustering2y <- kmeans(variables.pcay, 4)
+  
+  # keeping the clustering in th dataset treat_check
+  
+  treat_check[,i] <- clustering2y$cluster
+  
+  i = i + 1
+  
 }
 
-plot(1:10,elb_wss2,type="b",xlab="Nb. of clusters",ylab="WSS")
+remove(clustering2y, eikm_y, indy, out.pcay,variables.pcay,i,year)
 
-#Following this technique we should create 4 clusters
+#When we analyze the temporal variance of our control group we get that : 
 
-clustering3 <- kmeans(variables.pca3, 4)
+#There are some provinces that are in the control group in 2010 and are not in 2011
 
-clustering3
+#Azuay : 2012-2013
+#Chimborazo : is in 2010 but not in any other
+#Loja : 2012-2013
+#Tungurahua : 2012-2013
 
-row.names(variables.pca3) <- educ_indices_tot$row_name
+#Picincha is always in the control group and Santa elena is in the control group only on 2012-2013
 
-fviz_cluster(clustering3, geom="text", variables.pca3)
+#When we see what is happening in the clustering in 2012 and 2013, we see that 
+#Pichincha and Santa elena are the only provinces in the control group, and there
+#is another cluster where there are all the other control provinces, in 2012 with Guayas
+#in 2013 with Napo
 
+#There are three other provinces that appears in the control group in some years : 
 
-#################################################################
+#Carchi : 2011-2015
 
-# Educations years and informal employment trends
+#Guayas: 2011 - 2015 - 2018 
 
-#The aim is to plot trends as in a diff-in-diff plot 
+#Imbabura : 2015 - 2016 - 2017
 
-###############################################################
+#Napo : 2011 - 2018
 
-#Education years trends 
+#Santa Elena: 2012-2013
 
-#We will keep the clustering of 2010 to compute trends of educ years from 2010 to 2018
-
-#First keeping the cluster 4 as the control group and the others as the treatment_group
-
-treatment_group <- educ_indices2010[,"province"]
-
-treatment_group$treat_group <- rep(1, length(treatment_group))
-
-treatment_group$treat_group[grupos$`2010`==4] = 0
-
-mydata_did <- educ_indices2010[educ_indices2010$province!="GALAPAGOS" &
-                                 educ_indices2010$province!= "ZONAS NO DELIMITADAS",c("province","year","educ_years")]
-
-ener <- function(educ_indices){
-  mydata_didv <- educ_indices[educ_indices$province!="GALAPAGOS" &
-                                   educ_indices$province!= "ZONAS NO DELIMITADAS",c("province","year","educ_years")]
-  return(mydata_didv)
-}
-
-mydata_did0 <- ener(educ_indices2010)
-mydata_did1 <- ener(educ_indices2011)
-mydata_did2 <- ener(educ_indices2012)
-mydata_did2 <- ener(educ_indices2011)
-mydata_did3 <- ener(educ_indices2013)
-mydata_did4 <- ener(educ_indices2014)
-mydata_did5 <- ener(educ_indices2015)
-mydata_did5 <- ener(educ_indices2015)
-mydata_did6 <- ener(educ_indices2016)
-mydata_did6 <- ener(educ_indices2016)
-mydata_did7 <- ener(educ_indices2017)
-mydata_did8 <- ener(educ_indices2018)
-
-mydata_did <- rbind(mydata_did0, mydata_did1, mydata_did2, mydata_did3, mydata_did4, mydata_did5, mydata_did6,mydata_did7,mydata_did8)
-
-treatment_group <- treatment_group[treatment_group$province !=  "ZONAS NO DELIMITADAS" & treatment_group$province !=  "GALAPAGOS" ,]
-
-mydata_did <- merge(mydata_did,treatment_group)
-
-mydata_did$treated <- rep(0,length(mydata_did$province))
-
-mydata_did$treated[mydata_did$year>2012]=1
-
-
-summary(lm(educ_years ~ treat_group + treated , data = mydata_did) )
-
-###################################################################
-
-#Take the clusters that we are going to use as treatment and control group
-
-
-write.csv(treatment_group, "treatment_group.csv", row.names=FALSE)
-names(eikm_2010)
-
-treatment_group
-
-
-
+# We should add one by one each province to the control group in order to check for robustness 
 
 ################################# Descriptive statistics ##############################################
 
